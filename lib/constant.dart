@@ -63,3 +63,33 @@ Row kLoginRegisterHint(String text, String label, Function onTap) {
     ],
   );
 }
+
+// likes an comment btn
+
+Expanded kLikeAndComment(
+    int value, IconData icon, Color color, Function onTap) {
+  return Expanded(
+    child: Material(
+      child: InkWell(
+        onTap: () => onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: 10,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: 16,
+              ),
+              SizedBox(width: 4),
+              Text('$value')
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
