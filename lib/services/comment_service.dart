@@ -1,17 +1,17 @@
 import 'dart:convert';
-import '/constant.dart';
-import '/models/api_response.dart';
-import '/models/post.dart';
-import '/services/user_service.dart';
+import 'package:blogapp/models/api_response.dart';
+import 'package:blogapp/models/comment.dart';
 import 'package:http/http.dart' as http;
+import '../constant.dart';
+import 'user_service.dart';
 
-// get all post
-Future<ApiResponse> getPosts() async {
+// Get post comments
+Future<ApiResponse> getComments(int postId) async {
   ApiResponse apiResponse = ApiResponse();
   try {
     String token = await getToken();
     final response = await http.get(
-      Uri.parse(postsURL),
+      Uri.parse('$postsURL/$postId/comments'),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
@@ -20,15 +20,17 @@ Future<ApiResponse> getPosts() async {
 
     switch (response.statusCode) {
       case 200:
-        apiResponse.data = jsonDecode(response.body)['posts']
-            .map((p) => Post.fromJson(p))
+        // map each comments to comment model
+        apiResponse.data = jsonDecode(response.body)['comments']
+            .map((p) => Comment.fromJson(p))
             .toList();
-        // we get list of posts, so we need to map each item to post model
         apiResponse.data as List<dynamic>;
         break;
+
       case 401:
         apiResponse.error = unauthorized;
         break;
+
       default:
         apiResponse.error = somethingWhenWrong;
         break;
@@ -39,30 +41,29 @@ Future<ApiResponse> getPosts() async {
   return apiResponse;
 }
 
-// create post
-Future<ApiResponse> createPost(String body, String? image) async {
+// Create comment
+Future<ApiResponse> createComment(int postId, String? comment) async {
   ApiResponse apiResponse = ApiResponse();
   try {
     String token = await getToken();
     final response = await http.post(
-      Uri.parse(postsURL),
+      Uri.parse('$postsURL/$postId/comments'),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: image != null ? {'body': body, 'image': image} : {'body': body},
+      body: {
+        'comment': comment,
+      },
     );
-
-    // here if the image is null we just send the body, if not null we send the image tooo
 
     switch (response.statusCode) {
       case 200:
         apiResponse.data = jsonDecode(response.body);
         break;
 
-      case 422:
-        final errors = jsonDecode(response.body)['errors'];
-        apiResponse.error = errors[errors.keys.elementAt(0)][0];
+      case 403:
+        apiResponse.error = jsonDecode(response.body)['message'];
         break;
 
       case 401:
@@ -79,19 +80,55 @@ Future<ApiResponse> createPost(String body, String? image) async {
   return apiResponse;
 }
 
-// edit post
-Future<ApiResponse> editPost(int postId, String body) async {
+// Delete comment
+Future<ApiResponse> deleteComment(int commentId) async {
+  ApiResponse apiResponse = ApiResponse();
+  try {
+    String token = await getToken();
+    final response = await http.delete(
+      Uri.parse('$commentsURL/$commentId'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    switch (response.statusCode) {
+      case 200:
+        apiResponse.data = jsonDecode(response.body)['message'];
+        break;
+
+      case 403:
+        apiResponse.error = jsonDecode(response.body)['message'];
+        break;
+
+      case 401:
+        apiResponse.error = unauthorized;
+        break;
+
+      default:
+        apiResponse.error = somethingWhenWrong;
+        break;
+    }
+  } catch (e) {
+    apiResponse.error = serverError;
+  }
+  return apiResponse;
+}
+
+// Edit comment
+Future<ApiResponse> editComment(int commentId, String? comment) async {
   ApiResponse apiResponse = ApiResponse();
   try {
     String token = await getToken();
     final response = await http.put(
-      Uri.parse('$postsURL/$postId'),
+      Uri.parse('$commentsURL/$commentId'),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
       body: {
-        'body': body,
+        'comment': comment,
       },
     );
 
@@ -101,74 +138,7 @@ Future<ApiResponse> editPost(int postId, String body) async {
         break;
 
       case 403:
-        apiResponse.data = jsonDecode(response.body)['message'];
-        break;
-
-      case 401:
-        apiResponse.error = unauthorized;
-        break;
-
-      default:
-        apiResponse.error = somethingWhenWrong;
-        break;
-    }
-  } catch (e) {
-    apiResponse.error = serverError;
-  }
-  return apiResponse;
-}
-
-Future<ApiResponse> deletePost(int postId) async {
-  ApiResponse apiResponse = ApiResponse();
-  try {
-    String token = await getToken();
-    final response = await http.delete(
-      Uri.parse('$postsURL/$postId'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    switch (response.statusCode) {
-      case 200:
-        apiResponse.data = jsonDecode(response.body)['message'];
-        break;
-
-      case 403:
-        apiResponse.data = jsonDecode(response.body)['message'];
-        break;
-
-      case 401:
-        apiResponse.error = unauthorized;
-        break;
-
-      default:
-        apiResponse.error = somethingWhenWrong;
-        break;
-    }
-  } catch (e) {
-    apiResponse.error = serverError;
-  }
-  return apiResponse;
-}
-
-// Like or unlike post
-Future<ApiResponse> likeUnlikePost(int postId) async {
-  ApiResponse apiResponse = ApiResponse();
-  try {
-    String token = await getToken();
-    final response = await http.post(
-      Uri.parse('$postsURL/$postId/likes'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    switch (response.statusCode) {
-      case 200:
-        apiResponse.data = jsonDecode(response.body)['message'];
+        apiResponse.error = jsonDecode(response.body)['message'];
         break;
 
       case 401:

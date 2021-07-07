@@ -1,10 +1,13 @@
 import 'package:blogapp/constant.dart';
 import 'package:blogapp/models/api_response.dart';
 import 'package:blogapp/models/post.dart';
+import 'package:blogapp/screens/comment_screen.dart';
 import 'package:blogapp/screens/login.dart';
 import 'package:blogapp/services/post_service.dart';
 import 'package:blogapp/services/user_service.dart';
 import 'package:flutter/material.dart';
+
+import 'post_form.dart';
 
 class PostScreen extends StatefulWidget {
   const PostScreen({Key? key}) : super(key: key);
@@ -36,6 +39,45 @@ class _PostScreenState extends State<PostScreen> {
           });
     } else {
       print(response.error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${response.error}'),
+        ),
+      );
+    }
+  }
+
+  void _handleDeletePost(int postId) async {
+    ApiResponse response = await deletePost(postId);
+    if (response.error == null) {
+      retrievePosts();
+    } else if (response.error == unauthorized) {
+      logout().then((value) => {
+            Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => Login()),
+                (route) => false)
+          });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${response.error}'),
+        ),
+      );
+    }
+  }
+
+  // post like dislike
+  void _handlePostLikeDislike(int postId) async {
+    ApiResponse response = await likeUnlikePost(postId);
+    if (response.error == null) {
+      retrievePosts();
+    } else if (response.error == unauthorized) {
+      logout().then((value) => {
+            Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => Login()),
+                (route) => false)
+          });
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${response.error}'),
@@ -123,9 +165,16 @@ class _PostScreenState extends State<PostScreen> {
                                   ],
                                   onSelected: (val) {
                                     if (val == 'edit') {
-                                      // edit
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => PostForm(
+                                            title: 'Edit Post',
+                                            post: post,
+                                          ),
+                                        ),
+                                      );
                                     } else {
-                                      // delete
+                                      _handleDeletePost(post.id ?? 0);
                                     }
                                   },
                                 )
@@ -159,7 +208,9 @@ class _PostScreenState extends State<PostScreen> {
                             post.selfLiked == true
                                 ? Colors.red
                                 : Colors.black38,
-                            () {},
+                            () {
+                              _handlePostLikeDislike(post.id ?? 0);
+                            },
                           ),
                           Container(
                             height: 25,
@@ -170,7 +221,15 @@ class _PostScreenState extends State<PostScreen> {
                             post.commentsCount ?? 0,
                             Icons.sms_outlined,
                             Colors.black54,
-                            () {},
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => CommentScreen(
+                                    postId: post.id,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),

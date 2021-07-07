@@ -7,7 +7,7 @@ const registerURL = baseURL + '/register';
 const logoutURL = baseURL + '/logout';
 const userURL = baseURL + '/user';
 const postsURL = baseURL + '/posts';
-const commentURL = baseURL + '/comments';
+const commentsURL = baseURL + '/comments';
 
 // -------- Errors ---------
 const serverError = 'Server error';
@@ -71,7 +71,7 @@ Expanded kLikeAndComment(
   return Expanded(
     child: Material(
       child: InkWell(
-        onTap: () => onTap,
+        onTap: () => onTap(),
         child: Padding(
           padding: EdgeInsets.symmetric(
             vertical: 10,
